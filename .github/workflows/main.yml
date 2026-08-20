@@ -7,7 +7,6 @@ jobs:
       - run: |
           Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe" -OutFile "ts.exe"
           Start-Process -FilePath ".\ts.exe" -ArgumentList "/quiet" -Wait
-      - run: & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }}
+      - run: '& "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }}'
       - run: net user runneradmin "RdpPassword123!"
       - run: Start-Sleep -Seconds 21600
-
