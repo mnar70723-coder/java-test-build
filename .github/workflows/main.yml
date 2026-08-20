@@ -5,6 +5,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe" -OutFile "ts.exe"
           Start-Process -FilePath ".\ts.exe" -ArgumentList "/quiet" -Wait
       - run: '& "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }}'
