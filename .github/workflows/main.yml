@@ -22,21 +22,18 @@ jobs:
           Restart-Service -Name TermService -Force
 
       - name: Create RDP User
-        shell: powershell
+        shell: cmd
         run: |
-          $password = "RdpPass2026!#"
-          $securePass = ConvertTo-SecureString$password -AsPlainText -Force
-          New-LocalUser -Name "RDP" -Password $securePass -AccountNeverExpires
-          Add-LocalGroupMember -Group "Administrators" -Member "RDP"
-          Add-LocalGroupMember -Group "Remote Desktop Users" -Member "RDP"
-          
-          echo "RDP_PASS=$password" >> $env:GITHUB_ENV
+          net user RDP RdpPass2026!# /add
+          net localgroup Administrators RDP /add
+          net localgroup "Remote Desktop Users" RDP /add
+          echo RDP_PASS=RdpPass2026!# >> %GITHUB_ENV%
 
       - name: Install Tailscale
         shell: powershell
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
-          $installerPath = "$env:TEMP/tailscale.msi"
+          $installerPath = Join-Path$env:TEMP "tailscale.msi"
           
           Invoke-WebRequest -Uri $tsUrl -OutFile$installerPath
           Start-Process msiexec.exe -ArgumentList "/i", "`"$installerPath`"", "/quiet", "/norestart" -Wait
@@ -45,9 +42,10 @@ jobs:
       - name: Establish Tailscale Connection
         shell: powershell
         run: |
-          & "$env:ProgramFiles/Tailscale/tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-runner-$env:GITHUB_RUN_ID$tsIP = $null$retries = 0
+          $tsPath = "$env:ProgramFiles\Tailscale\tailscale.exe"
+          & $tsPath up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-runner-$env:GITHUB_RUN_ID$tsIP = $null$retries = 0
           while (-not $tsIP -and$retries -lt 10) {
-              $tsIP = & "$env:ProgramFiles/Tailscale/tailscale.exe" ip -4
+              $tsIP = &$tsPath ip -4
               Start-Sleep -Seconds 5
               $retries++
           }
@@ -56,7 +54,7 @@ jobs:
               Write-Error "Tailscale IP not assigned. Exiting."
               exit 1
           }
-          echo "TAILSCALE_IP=$tsIP" >> $env:GITHUB_ENV
+          Add-Content -Path $env:GITHUB_ENV -Value "TAILSCALE_IP=$tsIP"
 
       - name: Verify RDP Accessibility
         shell: powershell
