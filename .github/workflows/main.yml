@@ -24,10 +24,10 @@ jobs:
       - name: Create RDP User
         shell: cmd
         run: |
-          net user RDP RdpPass2026!# /add
+          net user RDP Admin123456789! /add
           net localgroup Administrators RDP /add
           net localgroup "Remote Desktop Users" RDP /add
-          echo RDP_PASS=RdpPass2026!# >> %GITHUB_ENV%
+          echo RDP_PASS=Admin123456789! >> %GITHUB_ENV%
 
       - name: Install Tailscale
         shell: powershell
