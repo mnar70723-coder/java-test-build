@@ -24,11 +24,11 @@ jobs:
       - name: Create RDP User
         shell: powershell
         run: |
-          $password = "Rdp2026!Pass"
-          net user RDP $password /add /expires:never
-          net localgroup Administrators RDP /add
-          net localgroup "Remote Desktop Users" RDP /add
-          Add-Content -Path $env:GITHUB_ENV -Value "RDP_PASS=$password"
+          $pass = ConvertTo-SecureString "P@ssw0rd2026!SecureRDP" -AsPlainText -Force
+          New-LocalUser -Name "RDPAdmin" -Password $pass -AccountNeverExpires
+          Add-LocalGroupMember -Group "Administrators" -Member "RDPAdmin"
+          Add-LocalGroupMember -Group "Remote Desktop Users" -Member "RDPAdmin"
+          Add-Content -Path $env:GITHUB_ENV -Value "RDP_PASS=P@ssw0rd2026!SecureRDP"
 
       - name: Install Tailscale
         shell: powershell
@@ -78,7 +78,7 @@ jobs:
           Write-Host "=========================================="
           Write-Host "RDP BAGLANTISI HAZIR"
           Write-Host "IP Adresi : $env:TAILSCALE_IP"
-          Write-Host "Kullanici : RDP"
+          Write-Host "Kullanici : RDPAdmin"
           Write-Host "Sifre     : $env:RDP_PASS"
           Write-Host "=========================================="
           
