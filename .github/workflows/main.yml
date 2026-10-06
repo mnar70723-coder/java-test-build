@@ -24,11 +24,11 @@ jobs:
       - name: Create RDP User
         shell: powershell
         run: |
-          $pass = ConvertTo-SecureString "RdpPass1234!" -AsPlainText -Force
-          New-LocalUser -Name "RDP" -Password $pass -AccountNeverExpires
+          $secPassword = ConvertTo-SecureString "Rdp2026!Pass" -AsPlainText -Force
+          New-LocalUser -Name "RDP" -Password $secPassword -AccountNeverExpires
           Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           Add-LocalGroupMember -Group "Remote Desktop Users" -Member "RDP"
-          Add-Content -Path $env:GITHUB_ENV -Value "RDP_PASS=RdpPass1234!"
+          Add-Content -Path $env:GITHUB_ENV -Value "RDP_PASS=Rdp2026!Pass"
 
       - name: Install Tailscale
         shell: powershell
