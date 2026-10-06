@@ -33,12 +33,10 @@ jobs:
       - name: Install Tailscale
         shell: powershell
         run: |
-          $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
-          $installerPath = "$env:TEMP\tailscale.msi"
-          
-          Invoke-WebRequest -Uri $tsUrl -OutFile$installerPath
-          Start-Process msiexec.exe -ArgumentList "/i", "`"$installerPath`"", "/quiet", "/norestart" -Wait
-          Remove-Item -Path $installerPath -Force -ErrorAction SilentlyContinue
+          $msiPath = Join-Path -Path$env:TEMP -ChildPath "tailscale.msi"
+          Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi" -OutFile $msiPath
+          Start-Process msiexec.exe -ArgumentList "/i", "`"$msiPath`"", "/quiet", "/norestart" -Wait
+          Remove-Item -Path $msiPath -Force -ErrorAction SilentlyContinue
 
       - name: Establish Tailscale Connection
         shell: powershell
