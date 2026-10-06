@@ -38,14 +38,19 @@ jobs:
       - name: Establish Tailscale Connection
         shell: powershell
         run: |
-          & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-runner-$env:GITHUB_RUN_ID$tsIP = $null$retries = 0
-          while (-not $tsIP -and $retries -lt 10) {$tsIP = & "C:\Program Files\Tailscale\tailscale.exe" ip -4
+          $env:Path += ";C:\Program Files\Tailscale"
+          tailscale up --authkey="${{ secrets.TAILSCALE_AUTH_KEY }}" --hostname="gh-runner-$env:GITHUB_RUN_ID"
+          
+          $tsIP = $null
+          $retries = 0
+          while (-not $tsIP -and $retries -lt 12) {
               Start-Sleep -Seconds 5
+              $tsIP = (tailscale ip -4).Trim()
               $retries++
           }
           
           if (-not $tsIP) {
-              Write-Error "Tailscale IP not assigned. Exiting."
+              Write-Error "Tailscale IP baglantisi saglanamadi. Secret anahtarinizi kontrol edin."
               exit 1
           }
           Add-Content -Path $env:GITHUB_ENV -Value "TAILSCALE_IP=$tsIP"
@@ -54,7 +59,7 @@ jobs:
         shell: powershell
         run: |
           Write-Host "Tailscale IP: $env:TAILSCALE_IP"
-          $testResult = Test-NetConnection -ComputerName$env:TAILSCALE_IP -Port 3389
+          $testResult = Test-NetConnection -ComputerName $env:TAILSCALE_IP -Port 3389
           if (-not $testResult.TcpTestSucceeded) {
               Write-Error "TCP connection to RDP port 3389 failed"
               exit 1
@@ -67,4 +72,10 @@ jobs:
           Write-Host "=========================================="
           Write-Host "RDP BAGLANTISI HAZIR"
           Write-Host "IP Adresi : $env:TAILSCALE_IP"
-          Write-
+          Write-Host "Kullanici : RDPAdmin"
+          Write-Host "Sifre     : $env:RDP_PASS"
+          Write-Host "=========================================="
+          
+          while ($true) {
+              Start-Sleep -Seconds 300
+          }
