@@ -21,22 +21,10 @@ jobs:
 
           Restart-Service -Name TermService -Force
 
-      - name: Create RDP User with Secure Password
+      - name: Create RDP User
         shell: powershell
         run: |
-          Add-Type -AssemblyName System.Security
-          $charSet = @{
-              Upper   = [char[]](65..90)
-              Lower   = [char[]](97..122)
-              Number  = [char[]](48..57)
-              Special = ([char[]](33..47) + [char[]](58..64) + [char[]](91..96) + [char[]](123..126))
-          }
-          $rawPassword = @()
-          $rawPassword +=$charSet.Upper | Get-Random -Count 4
-          $rawPassword +=$charSet.Lower | Get-Random -Count 4
-          $rawPassword +=$charSet.Number | Get-Random -Count 4
-          $rawPassword +=$charSet.Special | Get-Random -Count 4
-          $password = -join ($rawPassword | Sort-Object { Get-Random })
+          $password = "RdpPass2026!#"
           $securePass = ConvertTo-SecureString$password -AsPlainText -Force
           New-LocalUser -Name "RDP" -Password $securePass -AccountNeverExpires
           Add-LocalGroupMember -Group "Administrators" -Member "RDP"
@@ -77,4 +65,24 @@ jobs:
           $testResult = Test-NetConnection -ComputerName$env:TAILSCALE_IP -Port 3389
           if (-not $testResult.TcpTestSucceeded) {
               Write-Error "TCP connection to RDP port 3389 failed"
-              
+              exit 1
+          }
+          Write-Host "TCP connectivity successful!"
+
+      - name: Configure Desktop & Maintain Connection
+        shell: powershell
+        run: |
+          Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Name 'TaskbarSmallIcons' -Value 1 -ErrorAction SilentlyContinue
+          Set-ItemProperty -Path 'HKCU:\Control Panel\Desktop' -Name 'LogPixels' -Value 96 -ErrorAction SilentlyContinue
+          Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+          
+          Write-Host "=========================================="
+          Write-Host "RDP BAGLANTISI HAZIR"
+          Write-Host "IP Adresi : $env:TAILSCALE_IP"
+          Write-Host "Kullanici : RDP"
+          Write-Host "Sifre     : $env:RDP_PASS"
+          Write-Host "=========================================="
+          
+          while ($true) {
+              Start-Sleep -Seconds 300
+          }
