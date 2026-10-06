@@ -10,16 +10,14 @@ jobs:
 
     steps:
       - name: Configure Core RDP Settings
-        shell: powershell
+        shell: cmd
         run: |
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "SecurityLayer" -Value 0 -Force
-
+          reg add "HKLM\System\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
+          reg add "HKLM\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v UserAuthentication /t REG_DWORD /d 0 /f
           netsh advfirewall firewall delete rule name="RDP-Tailscale"
           netsh advfirewall firewall add rule name="RDP-Tailscale" dir=in action=allow protocol=TCP localport=3389
-
-          Restart-Service -Name TermService -Force
+          net stop TermService /y
+          net start TermService
 
       - name: Create RDP User
         shell: powershell
@@ -31,20 +29,17 @@ jobs:
           Add-Content -Path $env:GITHUB_ENV -Value "RDP_PASS=P@ssw0rd2026!SecureRDP"
 
       - name: Install Tailscale
-        shell: powershell
+        shell: cmd
         run: |
-          $msiPath = Join-Path -Path$env:TEMP -ChildPath "tailscale.msi"
-          Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi" -OutFile $msiPath
-          Start-Process msiexec.exe -ArgumentList "/i", "`"$msiPath`"", "/quiet", "/norestart" -Wait
-          Remove-Item -Path $msiPath -Force -ErrorAction SilentlyContinue
+          curl -L -o C:\Users\Public\tailscale.msi https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi
+          msiexec /i C:\Users\Public\tailscale.msi /quiet /norestart
+          del /f /q C:\Users\Public\tailscale.msi
 
       - name: Establish Tailscale Connection
         shell: powershell
         run: |
-          $tsPath = "$env:ProgramFiles\Tailscale\tailscale.exe"
-          & $tsPath up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-runner-$env:GITHUB_RUN_ID$tsIP = $null$retries = 0
-          while (-not $tsIP -and$retries -lt 10) {
-              $tsIP = &$tsPath ip -4
+          & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-runner-$env:GITHUB_RUN_ID$tsIP = $null$retries = 0
+          while (-not $tsIP -and $retries -lt 10) {$tsIP = & "C:\Program Files\Tailscale\tailscale.exe" ip -4
               Start-Sleep -Seconds 5
               $retries++
           }
@@ -69,17 +64,7 @@ jobs:
       - name: Configure Desktop & Maintain Connection
         shell: powershell
         run: |
-          Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Name 'TaskbarSmallIcons' -Value 1 -ErrorAction SilentlyContinue
-          Set-ItemProperty -Path 'HKCU:\Control Panel\Desktop' -Name 'LogPixels' -Value 96 -ErrorAction SilentlyContinue
-          Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
-          
           Write-Host "=========================================="
           Write-Host "RDP BAGLANTISI HAZIR"
           Write-Host "IP Adresi : $env:TAILSCALE_IP"
-          Write-Host "Kullanici : RDPAdmin"
-          Write-Host "Sifre     : $env:RDP_PASS"
-          Write-Host "=========================================="
-          
-          while ($true) {
-              Start-Sleep -Seconds 300
-          }
+          Write-
